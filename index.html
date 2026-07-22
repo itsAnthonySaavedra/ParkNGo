@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlutenTag | Inventory System</title>
+    <!-- Google Fonts for Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,700&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <!-- Modular CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-logo-text">GlutenTag</div>
+                <div class="brand-subtitle">Artisanal Bakery</div>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-tab="dashboard">
+                    <i class="ph ph-squares-four"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="inventory">
+                    <i class="ph ph-package"></i>
+                    <span>Inventory</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="locations">
+                    <i class="ph ph-map-pin"></i>
+                    <span>Locations</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="staff">
+                    <i class="ph ph-users"></i>
+                    <span>Staff</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="settings">
+                    <i class="ph ph-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <div>
+                    <div class="header-title-row">
+                        <h1>Inventory Overview</h1>
+                        <div id="headerBranchIndicator" class="branch-badge">
+                            <i class="ph ph-map-pin"></i> <span id="headerBranchText">Manila</span>
+                        </div>
+                    </div>
+                    <p>Manage and track stock across all GlutenTag locations.</p>
+                </div>
+                <div class="user-profile">
+                    <select id="userSwitcher" class="user-switcher-select">
+                        <!-- Populated by JS -->
+                    </select>
+                    <div class="avatar" id="userAvatar">O</div>
+                </div>
+            </header>
+
+            <!-- Location Selector (Global Filter) -->
+            <div class="location-selector" id="locationSelector">
+                <!-- Populated by JS -->
+            </div>
+
+            <!-- View: Dashboard -->
+            <div id="dashboardView">
+                <!-- Report Generator -->
+                <div class="card" style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; padding: 1.5rem;">
+                    <div>
+                        <h3 style="margin-bottom: 0.25rem;">Location Summary Report</h3>
+                        <p style="font-size: 0.85rem; margin: 0;">Generate a PDF summary of the current branch status.</p>
+                    </div>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <select id="reportTimeframe" class="form-control" style="width: auto;">
+                            <option value="Daily">Daily</option>
+                            <option value="Weekly">Weekly</option>
+                            <option value="Monthly">Monthly</option>
+                            <option value="Yearly">Yearly</option>
+                        </select>
+                        <button id="generateReportBtn" class="btn btn-primary" style="width: auto; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="ph ph-printer"></i> Generate PDF
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bakery-banner">
+                    <div class="banner-content">
+                        <h2>Fresh Stock, Happy Customers</h2>
+                        <p>Keep the ovens warm and the shelves full.</p>
+                    </div>
+                    <img src="assets/banner.png" alt="Fresh artisanal bread and pastries" class="banner-img">
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="summary-cards" id="summaryCards">
+                    <div class="summary-card">
+                        <div class="summary-icon"><i class="ph ph-package"></i></div>
+                        <div class="summary-info">
+                            <h4>Total Items</h4>
+                            <h2 id="totalItemsCount">0</h2>
+                        </div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon warning"><i class="ph ph-warning-circle"></i></div>
+                        <div class="summary-info">
+                            <h4>Low Stock</h4>
+                            <h2 id="lowStockCount">0</h2>
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- End Dashboard View -->
+
+            <!-- View: Inventory -->
+            <div id="inventoryView" style="display: none;">
+                <div class="dashboard-grid">
+                    <!-- Left Column: Inventory Table -->
+                    <section class="card">
+                        <div class="card-title">
+                            <h3>Current Stock</h3>
+                            <span id="currentLocationLabel" style="font-size: 0.9rem; color: var(--text-light);"></span>
+                        </div>
+                        <div style="overflow-x: auto;">
+                            <table class="inventory-table">
+                                <thead>
+                                    <tr>
+                                        <th class="sortable" data-sort="item" style="cursor: pointer; user-select: none;">Item <i class="ph ph-arrows-down-up" style="font-size: 0.8rem; margin-left: 2px;"></i></th>
+                                        <th class="sortable" data-sort="category" style="cursor: pointer; user-select: none;">Category <i class="ph ph-arrows-down-up" style="font-size: 0.8rem; margin-left: 2px;"></i></th>
+                                        <th class="sortable" data-sort="quantity" style="cursor: pointer; user-select: none;">Quantity <i class="ph ph-arrows-down-up" style="font-size: 0.8rem; margin-left: 2px;"></i></th>
+                                        <th class="sortable" data-sort="price" style="cursor: pointer; user-select: none;">Price (₱) <i class="ph ph-arrows-down-up" style="font-size: 0.8rem; margin-left: 2px;"></i></th>
+                                        <th>Unit</th>
+                                        <th class="sortable" data-sort="status" style="cursor: pointer; user-select: none;">Status <i class="ph ph-arrows-down-up" style="font-size: 0.8rem; margin-left: 2px;"></i></th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inventoryBody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <!-- Right Column: Update Forms -->
+                    <section class="card" style="display: flex; flex-direction: column; gap: 2rem;">
+                        <div>
+                            <div class="card-title">
+                                <h3>Update Stock</h3>
+                            </div>
+                            <form id="updateForm">
+                                <div class="form-group">
+                                    <label class="form-label" for="itemSelect">Item</label>
+                                    <select id="itemSelect" class="form-control" required>
+                                        <option value="" disabled selected>Select an item...</option>
+                                        <!-- Populated by JS -->
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="actionSelect">Action</label>
+                                    <select id="actionSelect" class="form-control" required>
+                                        <option value="add">Add Stock</option>
+                                        <option value="deduct">Deduct Stock</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="quantityInput">Quantity</label>
+                                    <input type="number" id="quantityInput" class="form-control" min="1" placeholder="e.g. 2" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Update Stock</button>
+                            </form>
+                        </div>
+                        
+                        <div style="border-top: 1px dashed var(--border-color); padding-top: 2rem;">
+                            <div class="card-title">
+                                <h3>Update Price</h3>
+                            </div>
+                            <form id="updatePriceForm">
+                                <div class="form-group">
+                                    <label class="form-label" for="priceItemSelect">Item</label>
+                                    <select id="priceItemSelect" class="form-control" required>
+                                        <option value="" disabled selected>Select an item...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="priceInput">New Price (₱)</label>
+                                    <input type="number" id="priceInput" class="form-control" min="0" step="0.01" placeholder="e.g. 250.00" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Update Price</button>
+                            </form>
+                        </div>
+                    </section>
+                </div>
+            </div> <!-- End Inventory View -->
+
+            <!-- View: Locations -->
+            <div id="locationsView" style="display: none;">
+                <div class="dashboard-grid">
+                    <section class="card" style="flex: 2;">
+                        <div class="card-title">
+                            <h3>Active Branches</h3>
+                        </div>
+                        <div id="locationsGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <!-- Populated by JS -->
+                        </div>
+                    </section>
+                    <section class="card" style="flex: 1;">
+                        <div class="card-title">
+                            <h3>Add Location</h3>
+                        </div>
+                        <form id="addLocationForm">
+                            <div class="form-group">
+                                <label class="form-label">Branch Name</label>
+                                <input type="text" id="locName" class="form-control" placeholder="e.g. Makati" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Address</label>
+                                <input type="text" id="locAddress" class="form-control" placeholder="Full address" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Contact Number</label>
+                                <input type="text" id="locContact" class="form-control" placeholder="Phone number" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add Location</button>
+                        </form>
+                    </section>
+                </div>
+            </div>
+
+            <!-- View: Staff -->
+            <div id="staffView" style="display: none;">
+                <div class="dashboard-grid">
+                    <section class="card">
+                        <div class="card-title">
+                            <h3>Staff Directory</h3>
+                            <span id="currentStaffLocationLabel" style="font-size: 0.9rem; color: var(--text-light);"></span>
+                        </div>
+                        <div style="overflow-x: auto;">
+                            <table class="inventory-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="staffBody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                    <section class="card">
+                        <div class="card-title">
+                            <h3>Hire Staff</h3>
+                        </div>
+                        <form id="addStaffForm">
+                            <div class="form-group">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" id="staffName" class="form-control" placeholder="e.g. Juan" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Role</label>
+                                <select id="staffRole" class="form-control" required>
+                                    <option value="Manager">Manager</option>
+                                    <option value="Baker">Baker</option>
+                                    <option value="Cashier">Cashier</option>
+                                    <option value="Delivery">Delivery</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add Staff Member</button>
+                        </form>
+                    </section>
+                </div>
+            </div>
+
+            <!-- View: Settings -->
+            <div id="settingsView" style="display: none;">
+                <section class="card" style="max-width: 600px; margin: 0 auto;">
+                    <div class="card-title">
+                        <h3>Preferences</h3>
+                    </div>
+                    <form id="settingsForm">
+                        <div class="settings-row" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--border-color);">
+                            <div>
+                                <strong>Email Alerts</strong>
+                                <p style="font-size: 0.85rem; color: var(--text-light);">Receive daily low stock summaries via email.</p>
+                            </div>
+                            <input type="checkbox" name="emailAlerts" style="transform: scale(1.5);">
+                        </div>
+                        <div class="settings-row" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--border-color);">
+                            <div>
+                                <strong>SMS Notifications</strong>
+                                <p style="font-size: 0.85rem; color: var(--text-light);">Get immediate text messages for deliveries.</p>
+                            </div>
+                            <input type="checkbox" name="smsAlerts" style="transform: scale(1.5);">
+                        </div>
+                        <div class="settings-row" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0;">
+                            <div>
+                                <strong>Auto-Sync Inventory</strong>
+                                <p style="font-size: 0.85rem; color: var(--text-light);">Automatically sync stock counts across branches.</p>
+                            </div>
+                            <input type="checkbox" name="autoSync" style="transform: scale(1.5);">
+                        </div>
+                    </form>
+                </section>
+
+                <section class="card" style="max-width: 600px; margin: 2rem auto 0 auto;">
+                    <div class="card-title">
+                        <h3>Automated Reports</h3>
+                    </div>
+                    <form id="autoReportsForm">
+                        <div class="settings-row" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--border-color);">
+                            <div>
+                                <strong>Send Automated Summaries</strong>
+                                <p style="font-size: 0.85rem; color: var(--text-light);">Automatically email reports based on schedule.</p>
+                            </div>
+                            <input type="checkbox" id="autoReportsToggle" style="transform: scale(1.5);">
+                        </div>
+                        <div id="autoReportsConfig" style="display: none; padding: 1rem 0; gap: 1rem; flex-direction: column;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">Frequency</label>
+                                <select id="autoReportsFreq" class="form-control">
+                                    <option value="Daily">Daily</option>
+                                    <option value="Weekly">Weekly</option>
+                                    <option value="Monthly">Monthly</option>
+                                    <option value="Yearly">Yearly</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label">Recipient Email</label>
+                                <input type="email" id="autoReportsEmail" class="form-control" placeholder="owner@glutentag.com">
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Save Configuration</button>
+                        </div>
+                    </form>
+                </section>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Notifications Container -->
+    <div class="notifications-wrapper" id="notificationsWrapper">
+        <!-- Notifications will be injected here -->
+    </div>
+
+    <!-- Hidden Report Template for PDF -->
+    <div id="reportTemplate" style="display: none; padding: 40px; background: white; color: #333; font-family: 'Inter', sans-serif;">
+        <!-- Populated dynamically by JS -->
+    </div>
+
+    <!-- Modular JS -->
+    <script src="js/store.js"></script>
+    <script src="js/theming.js"></script>
+    <script src="js/utils/notifications.js"></script>
+    <script src="js/components/inventory.js"></script>
+    <script src="js/components/dashboard.js"></script>
+    <script src="js/components/locations.js"></script>
+    <script src="js/components/staff.js"></script>
+    <script src="js/components/settings.js"></script>
+    <script src="js/components/reports.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
